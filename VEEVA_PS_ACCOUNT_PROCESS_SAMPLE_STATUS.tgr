@@ -1,0 +1,31 @@
+trigger VEEVA_PS_ACCOUNT_PROCESS_SAMPLE_STATUS on Account (before update) {
+        
+/*****************************************************************
+*
+* Name: VEEVA_PS_ACCOUNT_PROCESS_SAMPLE_STATUS
+* Author: Veeva Professional Services
+*
+* Description: 
+* If the address sample status formula has criteria on the 
+* account object, this trigger will perform a dummy update
+* of the address object to change the systemmodstamp for 
+* syncing. Veeva will not sync new formulas unless record changes.
+*
+* This logic performs changes based on the Account.Credentials_vod__c.
+* Add new conditions based on customer business rules.
+* For example, if specialty affects the sample formula, specialty 
+* changes should be added to trigger to force address updates.
+*
+*****************************************************************/
+    Set<Id> credentialsAccountSet = new Set<Id>();
+     
+    for (integer i=0;i<Trigger.new.size();i++) {   
+      if (Trigger.new[i].Credentials_vod__c  != Trigger.old[i].Credentials_vod__c )
+          credentialsAccountSet.add(Trigger.new[i].Id);     
+    }
+    
+    if(!credentialsAccountSet.isEmpty()) {
+      List<Address_vod__c> addr = [select Id from Address_vod__c where Account_vod__c in :credentialsAccountSet];
+      if(!addr.isEmpty()) update addr;     
+    }                    
+}
